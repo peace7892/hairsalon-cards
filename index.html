@@ -223,25 +223,77 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
 <div class="toast" id="toast"></div>
 
 <script>
-const OWNER='peace7892',REPO='hairsalon-cards',PATH='data/customers.json';
+const OWNER='peace7892',REPO='hairsalon-cards',PATH='data/customers.json',PRIV_PATH='data/private.json';
 let TOKEN=localStorage.getItem('ghToken')||'';
-let customers=[],selected=null,editId=null,visitId=null,fileSha=null;
+let customers=[],selected=null,editId=null,visitId=null,fileSha=null,privSha=null;
 let priv={};
+let cryptoKey=null;
 
-window.onload=()=>{
-  priv=JSON.parse(localStorage.getItem('priv')||'{}');
+/* ── 암호화 유틸 ── */
+async function deriveKey(pw){
+  const enc=new TextEncoder();
+  const km=await crypto.subtle.importKey('raw',enc.encode(pw),{name:'PBKDF2'},false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:enc.encode('hairone-priv-v1'),iterations:100000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptPriv(obj){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(obj)));
+  const buf=new Uint8Array(12+ct.byteLength);buf.set(iv);buf.set(new Uint8Array(ct),12);
+  return btoa(String.fromCharCode(...buf));
+}
+async function decryptPriv(b64){
+  const buf=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(0,12)},cryptoKey,buf.slice(12));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function loadPriv(){
+  try{
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PRIV_PATH}`,{headers:{'Authorization':`token ${TOKEN}`,'Accept':'application/vnd.github.v3+json'}});
+    if(r.ok){const d=await r.json();privSha=d.sha;const parsed=JSON.parse(atob(d.content.replace(/\n/g,'')));priv=await decryptPriv(parsed.data);localStorage.setItem('priv',JSON.stringify(priv));}
+    else{priv=JSON.parse(localStorage.getItem('priv')||'{}');}
+  }catch(e){priv=JSON.parse(localStorage.getItem('priv')||'{}');}
+}
+async function savePriv(){
+  if(!cryptoKey||!TOKEN)return;
+  localStorage.setItem('priv',JSON.stringify(priv));
+  try{
+    const encrypted=await encryptPriv(priv);
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify({v:1,data:encrypted}))));
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PRIV_PATH}`,{
+      method:'PUT',headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
+      body:JSON.stringify({message:'비공개 데이터 업데이트',content,...(privSha&&{sha:privSha})})
+    });
+    if(r.ok){const d=await r.json();privSha=d.content.sha;}
+  }catch(e){}
+}
+
+window.onload=async()=>{
   const hasPw=localStorage.getItem('pw');
   if(!hasPw){document.getElementById('setup-group').style.display='block';document.getElementById('login-desc').textContent='처음 사용 시 비밀번호를 설정하세요';}
-  if(localStorage.getItem('auth')==='1')showApp();
+  if(localStorage.getItem('auth')==='1'){
+    // 자동 로그인 시 저장된 비밀번호로 키 파생
+    const storedPw=localStorage.getItem('pw');
+    if(storedPw)cryptoKey=await deriveKey(storedPw);
+    priv=JSON.parse(localStorage.getItem('priv')||'{}');
+    showApp();
+  }
 };
 
-function login(){
+async function login(){
   const pw=document.getElementById('login-pw').value;
   const setup=document.getElementById('setup-pw').value;
   const stored=localStorage.getItem('pw');
-  if(!stored&&setup){const tok=document.getElementById('setup-token').value.trim();if(!tok){toast('GitHub 토큰을 입력하세요');return;}localStorage.setItem('pw',setup);localStorage.setItem('ghToken',tok);TOKEN=tok;localStorage.setItem('auth','1');showApp();return;}
-  if(pw===stored){localStorage.setItem('auth','1');document.getElementById('login-err').style.display='none';showApp();}
-  else document.getElementById('login-err').style.display='block';
+  if(!stored&&setup){
+    const tok=document.getElementById('setup-token').value.trim();
+    if(!tok){toast('GitHub 토큰을 입력하세요');return;}
+    localStorage.setItem('pw',setup);localStorage.setItem('ghToken',tok);TOKEN=tok;
+    cryptoKey=await deriveKey(setup);
+    localStorage.setItem('auth','1');showApp();return;
+  }
+  if(pw===stored){
+    cryptoKey=await deriveKey(pw);
+    localStorage.setItem('auth','1');document.getElementById('login-err').style.display='none';showApp();
+  }else document.getElementById('login-err').style.display='block';
 }
 function logout(){localStorage.setItem('auth','0');location.reload();}
 function showApp(){TOKEN=localStorage.getItem('ghToken')||'';document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='flex';load();}
@@ -250,7 +302,7 @@ async function load(){
   setSync('syncing','● 동기화 중');
   try{
     const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,{headers:{'Accept':'application/vnd.github.v3+json'}});
-    if(r.ok){const d=await r.json();fileSha=d.sha;customers=JSON.parse(atob(d.content.replace(/\n/g,''))).customers||[];setSync('','● 동기화 완료');}
+    if(r.ok){const d=await r.json();fileSha=d.sha;customers=JSON.parse(atob(d.content.replace(/\n/g,''))).customers||[];await loadPriv();setSync('','● 동기화 완료');}
     else{customers=[];setSync('err','● 파일 없음');}
   }catch(e){customers=[];setSync('err','● 오류');}
   renderList(customers);
@@ -394,10 +446,9 @@ async function saveCustomer(){
   const memo=document.getElementById('f-memo').value.trim();
   const id=editId||uid();
   const data={id,name,phone:document.getElementById('f-phone').value,firstVisit:document.getElementById('f-first').value,lastVisit:document.getElementById('f-last').value,nextVisit:document.getElementById('f-next').value,services,hairType:document.getElementById('f-type').value,headShape:document.getElementById('f-head').value,faceShape:document.getElementById('f-face').value,hairTexture:document.getElementById('f-hair').value,routine:document.getElementById('f-routine').value,styling:document.getElementById('f-styling').value,products:document.getElementById('f-products').value,warn:document.getElementById('f-warn').value,suggest:document.getElementById('f-suggest').value,cycle:document.getElementById('f-cycle').value,suggestReason:document.getElementById('f-suggest-reason').value,visits:editId?(customers.find(c=>c.id===editId)?.visits||[]):[]};
-  if(memo)priv[id]={memo};else delete priv[id];
-  localStorage.setItem('priv',JSON.stringify(priv));
+  if(memo)priv[id]={...priv[id],memo};else{if(priv[id])delete priv[id].memo;if(priv[id]&&!Object.keys(priv[id]).length)delete priv[id];}
   if(editId){const i=customers.findIndex(c=>c.id===editId);customers[i]=data;}else customers.unshift(data);
-  closeModal('cmodal');renderList(customers);pick(id);await save();
+  closeModal('cmodal');renderList(customers);pick(id);await save();await savePriv();
 }
 
 async function del(id){
@@ -447,7 +498,7 @@ async function saveVisit(){
   
   const c=customers.find(x=>x.id===visitId);
   if(!c.visits)c.visits=[];c.visits.push(visit);c.lastVisit=date;c.visitCount=(c.visitCount||0)+1;
-  closeModal('vmodal');renderDetail(c);await save();
+  closeModal('vmodal');renderDetail(c);await save();await savePriv();
 }
 
 function previewPhoto(input){
@@ -485,8 +536,8 @@ function compressImage(file,maxW=1200,quality=0.75){
 function editMemo(id){
   const memo=prompt('개인 메모:',(priv[id]||{}).memo||'');
   if(memo===null)return;
-  if(memo.trim())priv[id]={...priv[id],memo:memo.trim()};else delete priv[id];
-  localStorage.setItem('priv',JSON.stringify(priv));renderDetail(customers.find(c=>c.id===id));
+  if(memo.trim())priv[id]={...priv[id],memo:memo.trim()};else{if(priv[id])delete priv[id].memo;}
+  renderDetail(customers.find(c=>c.id===id));savePriv();
 }
 
 function toggleTag(b){b.classList.toggle('on');}
