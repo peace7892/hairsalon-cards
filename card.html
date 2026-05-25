@@ -65,7 +65,7 @@ function render(c){
     <div class="header">
       <div class="header-logo">🌿</div>
       <div class="header-salon">Hair Onenest</div>
-      <div class="header-name">${c.name}님의 헤어케어 기록</div>
+      <div class="header-name">${c.name}님의 헤어 노트</div>
       <div class="header-sub">${c.visitCount?`총 ${c.visitCount}회 방문`:''}${c.lastVisit?` · 최근 방문 ${fmt(c.lastVisit)}`:''}</div>
     </div>
     <div class="container">
@@ -114,7 +114,7 @@ function render(c){
 
       <div class="footer">헤어원네스트<br>이 기록은 고객님만을 위해 작성되었습니다</div>
     </div>`);
-  document.title=`${c.name}님의 헤어케어 기록 | 헤어원네스트`;
+  document.title=`${c.name}님의 헤어 노트 | 헤어원네스트`;
 }
 
 
