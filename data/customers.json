@@ -5,7 +5,7 @@
       "name": "원네스트",
       "phone": "9066",
       "firstVisit": "2026-05-01",
-      "lastVisit": "2026-05-16",
+      "lastVisit": "2026-05-25",
       "nextVisit": "2026-05-31",
       "services": [
         "커트"
@@ -21,7 +21,17 @@
       "suggest": "커트",
       "cycle": "4주마다 ",
       "suggestReason": "스타일 유지를 위해",
-      "visits": []
+      "visits": [
+        {
+          "vid": "mpl8ezftgple",
+          "date": "2026-05-25",
+          "services": [],
+          "detail": "",
+          "next": "",
+          "photo": "https://raw.githubusercontent.com/peace7892/hairsalon-cards/main/images/mpl8av6aytjt/1779715094303.jpg"
+        }
+      ],
+      "visitCount": 1
     }
   ]
 }
