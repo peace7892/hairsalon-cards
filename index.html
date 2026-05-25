@@ -189,7 +189,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
 <!-- 방문 기록 모달 -->
 <div class="overlay" id="vmodal">
   <div class="modal" style="max-width:460px">
-    <div class="mheader"><h2>방문 기록 추가</h2><button class="mclose" onclick="closeModal('vmodal')">✕</button></div>
+    <div class="mheader"><h2 id="vtitle">방문 기록 추가</h2><button class="mclose" onclick="closeModal('vmodal')">✕</button></div>
     <div class="form-group"><label>방문일 *</label><input type="date" id="v-date"></div>
     <div class="form-group">
       <label>시술 내용</label>
@@ -225,7 +225,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
 <script>
 const OWNER='peace7892',REPO='hairsalon-cards',PATH='data/customers.json',PRIV_PATH='data/private.json';
 let TOKEN=localStorage.getItem('ghToken')||'';
-let customers=[],selected=null,editId=null,visitId=null,fileSha=null,privSha=null;
+let customers=[],selected=null,editId=null,visitId=null,editVid=null,fileSha=null,privSha=null;
 let priv={};
 let cryptoKey=null;
 
@@ -395,9 +395,17 @@ function renderDetail(c){
       ${(c.visits&&c.visits.length)?c.visits.slice().reverse().map(v=>{const vp=(p.vp&&v.vid&&p.vp[v.vid])||{};return`
         <div class="visit-row">
           <div class="vdate">${fmt(v.date)}</div>
-          <div class="vcontent"><strong>${(v.services||[]).join(', ')||'기록'}</strong>${v.detail?`<span>${v.detail}</span>`:''}
-          ${vp.drug?`<span style="font-size:12px;color:#c0392b;background:#fff0f0;padding:2px 8px;border-radius:5px;display:inline-block;margin-top:4px">🔒 ${vp.drug}</span>`:''}
-          ${v.photo?`<img src="${v.photo}" style="max-width:100%;max-height:160px;border-radius:8px;margin-top:8px;object-fit:cover;display:block">`:''}</div>
+          <div class="vcontent" style="flex:1">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <strong>${(v.services||[]).join(', ')||'기록'}</strong>
+              <div style="display:flex;gap:4px;flex-shrink:0">
+                <button class="btn btn-secondary" style="font-size:11px;padding:2px 8px" onclick="openEditVisit('${c.id}','${v.vid||''}')">수정</button>
+                <button class="btn btn-danger" style="font-size:11px;padding:2px 8px" onclick="deleteVisit('${c.id}','${v.vid||''}','${v.date}')">삭제</button>
+              </div>
+            </div>
+            ${v.detail?`<span>${v.detail}</span>`:''}
+            ${vp.drug?`<span style="font-size:12px;color:#c0392b;background:#fff0f0;padding:2px 8px;border-radius:5px;display:inline-block;margin-top:4px">🔒 ${vp.drug}</span>`:''}
+            ${v.photo?`<img src="${v.photo}" style="max-width:100%;max-height:160px;border-radius:8px;margin-top:8px;object-fit:cover;display:block">`:''}</div>
         </div>`;}).join(''):`<p style="color:#ccc;font-size:13px;padding:8px 0">방문 기록 없음</p>`}
     </div>
     <div class="card">
@@ -460,7 +468,8 @@ async function del(id){
 }
 
 function openVisit(id){
-  visitId=id;
+  visitId=id;editVid=null;
+  document.getElementById('vtitle').textContent='방문 기록 추가';
   document.getElementById('v-date').value=new Date().toISOString().split('T')[0];
   document.querySelectorAll('#v-services .tag').forEach(b=>b.classList.remove('on'));
   ['v-detail','v-drug','v-next'].forEach(i=>document.getElementById(i).value='');
@@ -469,34 +478,73 @@ function openVisit(id){
   openModal('vmodal');
 }
 
+function openEditVisit(cid,vid){
+  const c=customers.find(x=>x.id===cid);
+  const v=c?.visits?.find(x=>x.vid===vid);
+  if(!c||!v){toast('기록을 찾을 수 없습니다');return;}
+  visitId=cid;editVid=vid;
+  document.getElementById('vtitle').textContent='방문 기록 수정';
+  document.getElementById('v-date').value=v.date||'';
+  document.querySelectorAll('#v-services .tag').forEach(b=>b.classList.toggle('on',(v.services||[]).includes(b.dataset.v)));
+  document.getElementById('v-detail').value=v.detail||'';
+  document.getElementById('v-next').value=v.next||'';
+  const vp=(priv[cid]?.vp&&priv[cid].vp[vid])||{};
+  document.getElementById('v-drug').value=vp.drug||'';
+  document.getElementById('v-photo').value='';
+  document.getElementById('v-photo-preview').innerHTML=v.photo?`<img src="${v.photo}" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:cover">`:'';
+  openModal('vmodal');
+}
+
+async function deleteVisit(cid,vid,date){
+  if(!confirm(`${fmt(date)} 방문 기록을 삭제하시겠습니까?`))return;
+  const c=customers.find(x=>x.id===cid);
+  if(!c)return;
+  c.visits=(c.visits||[]).filter(v=>v.vid!==vid||(v.vid===''&&v.date!==date));
+  // 방문 수 재계산
+  c.visitCount=c.visits.length;
+  c.lastVisit=c.visits.length?c.visits[c.visits.length-1].date:'';
+  // 비공개 약품 삭제
+  if(priv[cid]?.vp?.[vid]){delete priv[cid].vp[vid];}
+  renderDetail(c);await save();await savePriv();toast('삭제되었습니다');
+}
+
 async function saveVisit(){
   const date=document.getElementById('v-date').value;
   if(!date){toast('날짜를 입력하세요');return;}
   const services=[...document.querySelectorAll('#v-services .tag.on')].map(b=>b.dataset.v);
-  const vid=uid();
   const drug=document.getElementById('v-drug').value.trim();
+  const c=customers.find(x=>x.id===visitId);
+  if(!c)return;
+
+  // 수정 모드
+  if(editVid){
+    const v=c.visits.find(x=>x.vid===editVid);
+    if(!v){toast('기록을 찾을 수 없습니다');return;}
+    v.date=date;v.services=services;v.detail=document.getElementById('v-detail').value;v.next=document.getElementById('v-next').value;
+    // 약품 수정
+    if(!priv[visitId])priv[visitId]={};if(!priv[visitId].vp)priv[visitId].vp={};
+    if(drug)priv[visitId].vp[editVid]={drug};else delete priv[visitId].vp[editVid];
+    // 새 사진 업로드 시 교체
+    const photoFile=document.getElementById('v-photo').files[0];
+    if(photoFile){
+      toast('사진 업로드 중...');
+      try{const b64=await compressImage(photoFile);const ts=Date.now();const path=`images/${visitId}/${ts}.jpg`;const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,{method:'PUT',headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},body:JSON.stringify({message:'방문 사진 업로드',content:b64})});if(r.ok)v.photo=`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`;}catch(e){toast('사진 업로드 실패');}
+    }
+    // lastVisit 재계산
+    c.lastVisit=[...c.visits].sort((a,b)=>a.date<b.date?1:-1)[0]?.date||'';
+    closeModal('vmodal');renderDetail(c);await save();await savePriv();toast('수정되었습니다 ✅');
+    return;
+  }
+
+  // 추가 모드
+  const vid=uid();
   const visit={vid,date,services,detail:document.getElementById('v-detail').value,next:document.getElementById('v-next').value};
-  // 약품은 localStorage에만 저장
-  if(drug){if(!priv[visitId])priv[visitId]={};if(!priv[visitId].vp)priv[visitId].vp={};priv[visitId].vp[vid]={drug};localStorage.setItem('priv',JSON.stringify(priv));}
-  
-  // 사진 업로드
+  if(drug){if(!priv[visitId])priv[visitId]={};if(!priv[visitId].vp)priv[visitId].vp={};priv[visitId].vp[vid]={drug};}
   const photoFile=document.getElementById('v-photo').files[0];
   if(photoFile){
     toast('사진 업로드 중...');
-    try{
-      const b64=await compressImage(photoFile);
-      const ts=Date.now();
-      const path=`images/${visitId}/${ts}.jpg`;
-      const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,{
-        method:'PUT',
-        headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
-        body:JSON.stringify({message:'방문 사진 업로드',content:b64})
-      });
-      if(r.ok) visit.photo=`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`;
-    }catch(e){toast('사진 업로드 실패');}
+    try{const b64=await compressImage(photoFile);const ts=Date.now();const path=`images/${visitId}/${ts}.jpg`;const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,{method:'PUT',headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},body:JSON.stringify({message:'방문 사진 업로드',content:b64})});if(r.ok)visit.photo=`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`;}catch(e){toast('사진 업로드 실패');}
   }
-  
-  const c=customers.find(x=>x.id===visitId);
   if(!c.visits)c.visits=[];c.visits.push(visit);c.lastVisit=date;c.visitCount=(c.visitCount||0)+1;
   closeModal('vmodal');renderDetail(c);await save();await savePriv();
 }
