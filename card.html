@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f3;color:#1a1a1a;min-height:100vh}
-.header{background:linear-gradient(135deg,#2d5a27,#1a3d16);color:#fff;padding:40px 24px 32px;text-align:center}
+.header{background:linear-gradient(135deg,#5c3d2e,#3d2519);color:#fff;padding:40px 24px 32px;text-align:center}
 .header-logo{font-size:36px;margin-bottom:8px}
 .header-salon{font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:12px}
 .header-name{font-size:28px;font-weight:700;margin-bottom:6px}
@@ -24,9 +24,9 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
 .tl-date{font-size:12px;color:#aaa;width:52px;flex-shrink:0;padding-top:1px}
 .tl-body strong{font-size:14px;font-weight:600;color:#1a1a1a;display:block;margin-bottom:3px}
 .tl-body span{font-size:13px;color:#777;line-height:1.5}
-.service-tag{display:inline-block;background:#f0f5ef;color:#3d6b35;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-right:4px;margin-bottom:4px}
-.next-card{background:linear-gradient(135deg,#f0f5ef,#e8f0e6);border-radius:14px;padding:20px;margin-bottom:14px;border:1.5px solid #d4e6d0}
-.next-card .card-title{color:#3d6b35;border-color:#d4e6d0}
+.service-tag{display:inline-block;background:#f0f5ef;color:#8b5e3c;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-right:4px;margin-bottom:4px}
+.next-card{background:linear-gradient(135deg,#f5ede4,#ede0d4);border-radius:14px;padding:20px;margin-bottom:14px;border:1.5px solid #d4b89a}
+.next-card .card-title{color:#8b5e3c;border-color:#d4e6d0}
 .guide-item{margin-bottom:14px}
 .guide-item:last-child{margin-bottom:0}
 .guide-item label{font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px}
@@ -73,7 +73,7 @@ function render(c){
       <div class="card">
         <div class="card-title">내 헤어 프로필</div>
         <div class="pgrid">
-          ${c.hairType?`<div class="pitem" style="grid-column:1/-1;margin-bottom:4px"><label>타입</label><p style="font-size:18px;font-weight:700;color:#3d6b35;letter-spacing:.5px">${c.hairType}</p></div>`:''}
+          ${c.hairType?`<div class="pitem" style="grid-column:1/-1;margin-bottom:4px"><label>타입</label><p style="font-size:18px;font-weight:700;color:#8b5e3c;letter-spacing:.5px">${c.hairType}</p></div>`:''}
           ${c.headShape?`<div class="pitem"><label>두상</label><p>${c.headShape}</p></div>`:''}
           ${c.faceShape?`<div class="pitem"><label>얼굴형</label><p>${c.faceShape}</p></div>`:''}
           ${c.hairTexture?`<div class="pitem"><label>모질</label><p>${c.hairTexture}</p></div>`:''}
@@ -120,7 +120,7 @@ function render(c){
 function linkify(text){
   if(!text)return'';
   const urlRegex=/(https?:\/\/[^\s]+)/g;
-  return text.replace(urlRegex, url=>`<a href="${url}" target="_blank" rel="noopener" style="color:#3d6b35;text-decoration:underline;word-break:break-all">${url.includes('youtube')||url.includes('youtu.be')?'▶ 유튜브 영상 보기':url}</a>`);
+  return text.replace(urlRegex, url=>`<a href="${url}" target="_blank" rel="noopener" style="color:#8b5e3c;text-decoration:underline;word-break:break-all">${url.includes('youtube')||url.includes('youtu.be')?'▶ 유튜브 영상 보기':url}</a>`);
 }
 
 function show(html){document.getElementById('content').innerHTML=html;}
