@@ -205,6 +205,14 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
     <div class="form-group"><label>시술 상세</label><textarea id="v-detail" rows="2" placeholder="예) 뿌리 볼륨 강조, 내추럴 브라운"></textarea></div>
     <div class="form-group"><label>사용 약품</label><input type="text" id="v-drug" placeholder="사용 약품/제품"></div>
     <div class="form-group"><label>다음 방문 제안</label><input type="text" id="v-next" placeholder="예) 3개월 후 클리닉"></div>
+    <div class="form-group">
+      <label>사진</label>
+      <label for="v-photo" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed #d4b89a;border-radius:9px;cursor:pointer;color:#8b5e3c;font-size:13px;font-weight:600;background:#fdfaf5">
+        📷 사진 선택 또는 촬영
+        <input type="file" id="v-photo" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto(this)">
+      </label>
+      <div id="v-photo-preview" style="margin-top:8px"></div>
+    </div>
     <div class="mfooter">
       <button class="btn btn-secondary" onclick="closeModal('vmodal')">취소</button>
       <button class="btn btn-primary" style="padding:10px 24px" onclick="saveVisit()">저장</button>
@@ -335,7 +343,8 @@ function renderDetail(c){
       ${(c.visits&&c.visits.length)?c.visits.slice().reverse().map(v=>`
         <div class="visit-row">
           <div class="vdate">${fmt(v.date)}</div>
-          <div class="vcontent"><strong>${(v.services||[]).join(', ')||'기록'}</strong>${v.detail?`<span>${v.detail}</span>`:''}</div>
+          <div class="vcontent"><strong>${(v.services||[]).join(', ')||'기록'}</strong>${v.detail?`<span>${v.detail}</span>`:''}
+          ${v.photo?`<img src="${v.photo}" style="max-width:100%;max-height:160px;border-radius:8px;margin-top:8px;object-fit:cover;display:block">`:''}</div>
         </div>`).join(''):`<p style="color:#ccc;font-size:13px;padding:8px 0">방문 기록 없음</p>`}
     </div>
     <div class="card">
@@ -403,6 +412,8 @@ function openVisit(id){
   document.getElementById('v-date').value=new Date().toISOString().split('T')[0];
   document.querySelectorAll('#v-services .tag').forEach(b=>b.classList.remove('on'));
   ['v-detail','v-drug','v-next'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('v-photo').value='';
+  document.getElementById('v-photo-preview').innerHTML='';
   openModal('vmodal');
 }
 
@@ -411,9 +422,59 @@ async function saveVisit(){
   if(!date){toast('날짜를 입력하세요');return;}
   const services=[...document.querySelectorAll('#v-services .tag.on')].map(b=>b.dataset.v);
   const visit={date,services,detail:document.getElementById('v-detail').value,drug:document.getElementById('v-drug').value,next:document.getElementById('v-next').value};
+  
+  // 사진 업로드
+  const photoFile=document.getElementById('v-photo').files[0];
+  if(photoFile){
+    toast('사진 업로드 중...');
+    try{
+      const b64=await compressImage(photoFile);
+      const ts=Date.now();
+      const path=`images/${visitId}/${ts}.jpg`;
+      const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,{
+        method:'PUT',
+        headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
+        body:JSON.stringify({message:'방문 사진 업로드',content:b64})
+      });
+      if(r.ok) visit.photo=`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`;
+    }catch(e){toast('사진 업로드 실패');}
+  }
+  
   const c=customers.find(x=>x.id===visitId);
   if(!c.visits)c.visits=[];c.visits.push(visit);c.lastVisit=date;c.visitCount=(c.visitCount||0)+1;
   closeModal('vmodal');renderDetail(c);await save();
+}
+
+function previewPhoto(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('v-photo-preview').innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:cover">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function compressImage(file,maxW=1200,quality=0.75){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxW){h=h*maxW/w;w=maxW;}
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        canvas.toBlob(blob=>{
+          const r=new FileReader();
+          r.onload=e=>resolve(e.target.result.split(',')[1]);
+          r.readAsDataURL(blob);
+        },'image/jpeg',quality);
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function editMemo(id){
