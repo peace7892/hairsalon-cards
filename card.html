@@ -85,6 +85,7 @@ function render(c){
         <div class="card-title">🔮 다음 방문 제안</div>
         ${c.nextVisit?`<div class="guide-item"><label>권장 시기</label><p>${fmt(c.nextVisit)}</p></div>`:''}
         ${c.suggest?`<div class="guide-item"><label>추천 시술</label><p>${linkify(c.suggest)}</p></div>`:''}
+        ${c.cycle?`<div class="guide-item"><label>방문 주기</label><p>${c.cycle}</p></div>`:''}
         ${c.suggestReason?`<div class="guide-item"><label>이유</label><p>${linkify(c.suggestReason)}</p></div>`:''}
       </div>`:''}
 
