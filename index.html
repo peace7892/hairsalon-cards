@@ -174,6 +174,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
     <div class="form-group"><label>주의사항</label><input type="text" id="f-warn" placeholder="예) 젖은 상태 빗질 금지"></div>
     <hr class="divider"><div class="section-label">다음 방문 제안</div>
     <div class="form-group"><label>추천 시술</label><input type="text" id="f-suggest" placeholder="예) 클리닉 + 커트 유지"></div>
+    <div class="form-group"><label>방문 주기 추천</label><input type="text" id="f-cycle" placeholder="예) 3개월, 6주마다"></div>
     <div class="form-group"><label>이유</label><input type="text" id="f-suggest-reason" placeholder="예) 모질 보강 필요한 시기"></div>
     <hr class="divider">
     <div class="section-label">🔒 개인 메모 <span style="font-weight:400;text-transform:none;letter-spacing:0">(이 기기에만 저장 — 고객에게 공유 안됨)</span></div>
@@ -328,6 +329,7 @@ function renderDetail(c){
       <div class="card-title">다음 방문 제안</div>
       ${c.nextVisit?`<div class="pitem" style="margin-bottom:10px"><label>권장 날짜</label><p>${fmt(c.nextVisit)}</p></div>`:''}
       ${c.suggest?`<div class="pitem" style="margin-bottom:10px"><label>추천 시술</label><p>${c.suggest}</p></div>`:''}
+      ${c.cycle?`<div class="pitem" style="margin-bottom:10px"><label>방문 주기</label><p>${c.cycle}</p></div>`:''}
       ${c.suggestReason?`<div class="pitem"><label>이유</label><p>${c.suggestReason}</p></div>`:''}
     </div>`:''}
     <div class="card">
@@ -365,6 +367,7 @@ function openEdit(id){
   document.getElementById('f-products').value=c.products||'';
   document.getElementById('f-warn').value=c.warn||'';
   document.getElementById('f-suggest').value=c.suggest||'';
+  document.getElementById('f-cycle').value=c.cycle||'';
   document.getElementById('f-suggest-reason').value=c.suggestReason||'';
   document.getElementById('f-memo').value=(priv[id]||{}).memo||'';
   document.querySelectorAll('#f-services .tag').forEach(b=>b.classList.toggle('on',(c.services||[]).includes(b.dataset.v)));
@@ -372,7 +375,7 @@ function openEdit(id){
 }
 
 function clearForm(){
-  ['f-name','f-phone','f-first','f-last','f-next','f-head','f-face','f-hair','f-routine','f-styling','f-products','f-warn','f-suggest','f-suggest-reason','f-memo'].forEach(i=>document.getElementById(i).value='');
+  ['f-name','f-phone','f-first','f-last','f-next','f-head','f-face','f-hair','f-routine','f-styling','f-products','f-warn','f-suggest','f-cycle','f-suggest-reason','f-memo'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('f-status').value='활성';
   document.querySelectorAll('#f-services .tag').forEach(b=>b.classList.remove('on'));
 }
@@ -383,7 +386,7 @@ async function saveCustomer(){
   const services=[...document.querySelectorAll('#f-services .tag.on')].map(b=>b.dataset.v);
   const memo=document.getElementById('f-memo').value.trim();
   const id=editId||uid();
-  const data={id,name,phone:document.getElementById('f-phone').value,firstVisit:document.getElementById('f-first').value,lastVisit:document.getElementById('f-last').value,nextVisit:document.getElementById('f-next').value,status:document.getElementById('f-status').value,services,headShape:document.getElementById('f-head').value,faceShape:document.getElementById('f-face').value,hairTexture:document.getElementById('f-hair').value,routine:document.getElementById('f-routine').value,styling:document.getElementById('f-styling').value,products:document.getElementById('f-products').value,warn:document.getElementById('f-warn').value,suggest:document.getElementById('f-suggest').value,suggestReason:document.getElementById('f-suggest-reason').value,visits:editId?(customers.find(c=>c.id===editId)?.visits||[]):[]};
+  const data={id,name,phone:document.getElementById('f-phone').value,firstVisit:document.getElementById('f-first').value,lastVisit:document.getElementById('f-last').value,nextVisit:document.getElementById('f-next').value,status:document.getElementById('f-status').value,services,headShape:document.getElementById('f-head').value,faceShape:document.getElementById('f-face').value,hairTexture:document.getElementById('f-hair').value,routine:document.getElementById('f-routine').value,styling:document.getElementById('f-styling').value,products:document.getElementById('f-products').value,warn:document.getElementById('f-warn').value,suggest:document.getElementById('f-suggest').value,cycle:document.getElementById('f-cycle').value,suggestReason:document.getElementById('f-suggest-reason').value,visits:editId?(customers.find(c=>c.id===editId)?.visits||[]):[]};
   if(memo)priv[id]={memo};else delete priv[id];
   localStorage.setItem('priv',JSON.stringify(priv));
   if(editId){const i=customers.findIndex(c=>c.id===editId);customers[i]=data;}else customers.unshift(data);
