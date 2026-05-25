@@ -240,7 +240,7 @@ function showApp(){TOKEN=localStorage.getItem('ghToken')||'';document.getElement
 async function load(){
   setSync('syncing','● 동기화 중');
   try{
-    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,{headers:{'Authorization':`token ${TOKEN}`}});
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,{headers:{'Accept':'application/vnd.github.v3+json'}});
     if(r.ok){const d=await r.json();fileSha=d.sha;customers=JSON.parse(atob(d.content.replace(/\n/g,''))).customers||[];setSync('','● 동기화 완료');}
     else{customers=[];setSync('err','● 파일 없음');}
   }catch(e){customers=[];setSync('err','● 오류');}
