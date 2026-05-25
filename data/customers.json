@@ -1,3 +1,27 @@
 {
-  "customers": []
+  "customers": [
+    {
+      "id": "mpl8av6aytjt",
+      "name": "원네스틉",
+      "phone": "9066",
+      "firstVisit": "2026-05-01",
+      "lastVisit": "2026-05-16",
+      "nextVisit": "2026-05-31",
+      "services": [
+        "커트"
+      ],
+      "hairType": "사파이어타입",
+      "headShape": "물방울형",
+      "faceShape": "하트형",
+      "hairTexture": "두꺼운 반곱슬",
+      "routine": "드라이어, 오일",
+      "styling": "100%건조",
+      "products": "헤어오일",
+      "warn": "80% 이상 건조하기 ",
+      "suggest": "커트",
+      "cycle": "4주마다 ",
+      "suggestReason": "스타일 유지를 위해",
+      "visits": []
+    }
+  ]
 }
