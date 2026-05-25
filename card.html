@@ -73,6 +73,7 @@ function render(c){
       <div class="card">
         <div class="card-title">내 헤어 프로필</div>
         <div class="pgrid">
+          ${c.hairType?`<div class="pitem" style="grid-column:1/-1;margin-bottom:4px"><label>타입</label><p style="font-size:18px;font-weight:700;color:#3d6b35;letter-spacing:.5px">${c.hairType}</p></div>`:''}
           ${c.headShape?`<div class="pitem"><label>두상</label><p>${c.headShape}</p></div>`:''}
           ${c.faceShape?`<div class="pitem"><label>얼굴형</label><p>${c.faceShape}</p></div>`:''}
           ${c.hairTexture?`<div class="pitem"><label>모질</label><p>${c.hairTexture}</p></div>`:''}
