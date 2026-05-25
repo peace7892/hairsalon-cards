@@ -114,6 +114,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
     <h1>✂️ 헤어원네스트</h1>
     <div style="display:flex;align-items:center;gap:16px">
       <span class="sync" id="sync">● 로딩 중</span>
+      <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;font-size:12px;padding:5px 12px" onclick="changeToken()">🔑 토큰</button>
       <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;font-size:12px;padding:5px 12px" onclick="logout()">로그아웃</button>
     </div>
   </div>
@@ -296,6 +297,13 @@ async function login(){
   }else document.getElementById('login-err').style.display='block';
 }
 function logout(){localStorage.setItem('auth','0');location.reload();}
+function changeToken(){
+  const t=prompt('새 GitHub 토큰을 입력하세요 (ghp_...):');
+  if(!t||!t.trim())return;
+  if(!t.startsWith('ghp_')){toast('올바른 토큰 형식이 아닙니다');return;}
+  localStorage.setItem('ghToken',t.trim());TOKEN=t.trim();
+  toast('토큰이 변경되었습니다 ✅');
+}
 function showApp(){TOKEN=localStorage.getItem('ghToken')||'';document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='flex';load();}
 
 async function load(){
