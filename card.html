@@ -84,8 +84,8 @@ function render(c){
       <div class="next-card">
         <div class="card-title">🔮 다음 방문 제안</div>
         ${c.nextVisit?`<div class="guide-item"><label>권장 시기</label><p>${fmt(c.nextVisit)}</p></div>`:''}
-        ${c.suggest?`<div class="guide-item"><label>추천 시술</label><p>${c.suggest}</p></div>`:''}
-        ${c.suggestReason?`<div class="guide-item"><label>이유</label><p>${c.suggestReason}</p></div>`:''}
+        ${c.suggest?`<div class="guide-item"><label>추천 시술</label><p>${linkify(c.suggest)}</p></div>`:''}
+        ${c.suggestReason?`<div class="guide-item"><label>이유</label><p>${linkify(c.suggestReason)}</p></div>`:''}
       </div>`:''}
 
       ${visits.length?`
@@ -96,7 +96,7 @@ function render(c){
             <div class="tl-date">${fmt(v.date)}</div>
             <div class="tl-body">
               <strong>${(v.services||[]).map(s=>`<span class="service-tag">${s}</span>`).join('')||'방문'}</strong>
-              ${v.detail?`<span>${v.detail}</span>`:''}
+              ${v.detail?`<span>${linkify(v.detail)}</span>`:''}
             </div>
           </div>`).join('')}
       </div>`:''}
@@ -104,14 +104,21 @@ function render(c){
       ${c.styling||c.products||c.warn?`
       <div class="card">
         <div class="card-title">🏠 홈케어 가이드</div>
-        ${c.styling?`<div class="guide-item"><label>손질 방법</label><p>${c.styling}</p></div>`:''}
-        ${c.products?`<div class="guide-item"><label>추천 제품</label><p>${c.products}</p></div>`:''}
-        ${c.warn?`<div class="warn-box">⚠️ ${c.warn}</div>`:''}
+        ${c.styling?`<div class="guide-item"><label>손질 방법</label><p>${linkify(c.styling)}</p></div>`:''}
+        ${c.products?`<div class="guide-item"><label>추천 제품</label><p>${linkify(c.products)}</p></div>`:''}
+        ${c.warn?`<div class="warn-box">⚠️ ${linkify(c.warn)}</div>`:''}
       </div>`:''}
 
       <div class="footer">헤어원네스트<br>이 기록은 고객님만을 위해 작성되었습니다</div>
     </div>`);
   document.title=`${c.name}님의 헤어케어 기록 | 헤어원네스트`;
+}
+
+
+function linkify(text){
+  if(!text)return'';
+  const urlRegex=/(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, url=>`<a href="${url}" target="_blank" rel="noopener" style="color:#3d6b35;text-decoration:underline;word-break:break-all">${url.includes('youtube')||url.includes('youtu.be')?'▶ 유튜브 영상 보기':url}</a>`);
 }
 
 function show(html){document.getElementById('content').innerHTML=html;}
