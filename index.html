@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>헤어원네스트 관리자</title>
+<style>
+:root{--green:#2d5a27;--green-light:#3d6b35;--green-bg:#f0f5ef;--border:#e8e4df;--text:#1a1a1a;--sub:#777;--bg:#f7f6f3;--surface:#fff;--red-bg:#fff8f8;--red-border:#f5c6c6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(135deg,#2d5a27,#1a3d16)}
+.login-card{background:#fff;border-radius:20px;padding:48px 40px;width:360px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center}
+.login-logo{font-size:32px;margin-bottom:12px}
+.login-card h1{font-size:18px;font-weight:700;color:var(--green);margin-bottom:6px}
+.login-card p{color:#aaa;font-size:13px;margin-bottom:32px}
+/* COMMON */
+.form-group{margin-bottom:14px;text-align:left}
+.form-group label{display:block;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;background:#fff}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--green-light)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border:none;border-radius:9px;font-size:13px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--green-light);color:#fff}
+.btn-primary:hover{background:var(--green)}
+.btn-secondary{background:var(--green-bg);color:var(--green-light)}
+.btn-secondary:hover{background:#dcebd9}
+.btn-danger{background:#fff0f0;color:#c0392b}
+.btn-danger:hover{background:#ffe0e0}
+.btn-block{width:100%;padding:12px}
+/* APP */
+#app{display:none;height:100vh;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px;background:var(--green);color:#fff;flex-shrink:0}
+.topbar h1{font-size:15px;font-weight:700;letter-spacing:.3px}
+.sync{font-size:12px;color:rgba(255,255,255,.65)}
+.sync.syncing{color:#ffeb3b}.sync.err{color:#ef9a9a}
+.layout{display:flex;flex:1;overflow:hidden}
+/* SIDEBAR */
+.sidebar{width:260px;flex-shrink:0;border-right:1px solid var(--border);background:#fff;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-top{padding:12px;border-bottom:1px solid var(--border);display:flex;gap:8px}
+.search{flex:1;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:13px;font-family:inherit;outline:none}
+.search:focus{border-color:var(--green-light)}
+.clist{flex:1;overflow-y:auto;padding:6px}
+.citem{padding:11px 12px;border-radius:10px;cursor:pointer;transition:background .12s;border:1.5px solid transparent;margin-bottom:2px}
+.citem:hover{background:#f5f5f5}
+.citem.active{background:var(--green-bg);border-color:var(--green-light)}
+.citem-name{font-size:14px;font-weight:600}
+.citem-sub{font-size:12px;color:#aaa;margin-top:3px;display:flex;align-items:center;gap:6px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.b-active{background:#e8f5e9;color:#2d7d32}
+.b-waiting{background:#fff8e1;color:#f57f17}
+.b-inactive{background:#f5f5f5;color:#999}
+.empty-list{text-align:center;padding:40px 16px;color:#ccc;font-size:13px;line-height:1.8}
+/* DETAIL */
+.detail{flex:1;overflow-y:auto;padding:24px;background:var(--bg)}
+.empty-detail{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#ccc;gap:10px;font-size:14px}
+.dheader{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px}
+.dname{font-size:22px;font-weight:700}
+.dmeta{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.dmeta span{font-size:12px;color:var(--sub)}
+.dbtns{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.card{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#bbb;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pitem label{font-size:11px;font-weight:600;color:#bbb;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px}
+.pitem p{font-size:14px;color:var(--text);line-height:1.5}
+.visit-row{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid #f5f5f5}
+.visit-row:last-child{border-bottom:none}
+.vdate{font-size:12px;color:#aaa;width:56px;flex-shrink:0;padding-top:2px}
+.vcontent strong{font-size:14px;font-weight:600;display:block;margin-bottom:3px}
+.vcontent span{font-size:13px;color:var(--sub);line-height:1.5}
+.private-box{background:var(--red-bg);border:1.5px solid var(--red-border);border-radius:9px;padding:12px 14px;font-size:14px;line-height:1.6;color:#333}
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.mheader{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.mheader h2{font-size:17px;font-weight:700}
+.mclose{background:none;border:none;font-size:20px;cursor:pointer;color:#bbb;padding:2px;line-height:1}
+.mclose:hover{color:#333}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.divider{border:none;border-top:1px solid #f0f0f0;margin:16px 0}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#aaa;margin-bottom:12px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{padding:4px 12px;border:1.5px solid #e0e0e0;border-radius:20px;font-size:12px;cursor:pointer;background:#fff;font-family:inherit;transition:all .15s}
+.tag.on{background:var(--green-light);border-color:var(--green-light);color:#fff}
+.mfooter{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #f0f0f0}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:11px 18px;border-radius:9px;font-size:13px;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">✂️</div>
+    <h1>헤어원네스트</h1>
+    <p id="login-desc">관리자 로그인</p>
+    <div id="setup-group" style="display:none">
+      <div class="form-group"><label>비밀번호 설정 (처음 1회)</label><input type="password" id="setup-pw" placeholder="새 비밀번호"></div>
+      <div class="form-group"><label>GitHub 토큰 (처음 1회)</label><input type="text" id="setup-token" placeholder="ghp_..."></div>
+    </div>
+    <div class="form-group">
+      <label>비밀번호</label>
+      <input type="password" id="login-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <div id="login-err" style="color:#e53935;font-size:13px;margin-bottom:12px;display:none">비밀번호가 틀렸습니다</div>
+    <button class="btn btn-primary btn-block" onclick="login()">로그인</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <h1>✂️ 헤어원네스트</h1>
+    <div style="display:flex;align-items:center;gap:16px">
+      <span class="sync" id="sync">● 로딩 중</span>
+      <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;font-size:12px;padding:5px 12px" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <input class="search" type="text" placeholder="🔍 고객 검색" oninput="filterList(this.value)">
+        <button class="btn btn-primary" style="padding:8px 12px;font-size:13px" onclick="openAdd()">+ 추가</button>
+      </div>
+      <div class="clist" id="clist"><div class="empty-list">로딩 중...</div></div>
+    </div>
+    <div class="detail" id="detail">
+      <div class="empty-detail">
+        <div style="font-size:48px">✂️</div>
+        <p>왼쪽에서 고객을 선택하세요</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 고객 추가/편집 모달 -->
+<div class="overlay" id="cmodal">
+  <div class="modal">
+    <div class="mheader"><h2 id="mtitle">고객 추가</h2><button class="mclose" onclick="closeModal('cmodal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="고객 이름"></div>
+      <div class="form-group"><label>연락처</label><input type="tel" id="f-phone" placeholder="010-0000-0000"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>첫 방문일</label><input type="date" id="f-first"></div>
+      <div class="form-group"><label>최근 방문일</label><input type="date" id="f-last"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>다음 방문 권장일</label><input type="date" id="f-next"></div>
+      <div class="form-group"><label>상태</label><select id="f-status"><option>활성</option><option>대기중</option><option>휴면</option></select></div>
+    </div>
+    <div class="form-group">
+      <label>주요 시술</label>
+      <div class="tags" id="f-services">
+        <button class="tag" data-v="커트" onclick="toggleTag(this)">커트</button>
+        <button class="tag" data-v="염색" onclick="toggleTag(this)">염색</button>
+        <button class="tag" data-v="펌" onclick="toggleTag(this)">펌</button>
+        <button class="tag" data-v="탈색" onclick="toggleTag(this)">탈색</button>
+        <button class="tag" data-v="클리닉" onclick="toggleTag(this)">클리닉</button>
+        <button class="tag" data-v="매직" onclick="toggleTag(this)">매직</button>
+      </div>
+    </div>
+    <hr class="divider"><div class="section-label">헤어 프로필</div>
+    <div class="form-row">
+      <div class="form-group"><label>두상</label><input type="text" id="f-head" placeholder="예) 후두부 납작"></div>
+      <div class="form-group"><label>얼굴형</label><input type="text" id="f-face" placeholder="예) 계란형"></div>
+    </div>
+    <div class="form-group"><label>모질</label><input type="text" id="f-hair" placeholder="예) 가늘고 직모, 손상도 낮음"></div>
+    <div class="form-group"><label>평소 홈케어</label><input type="text" id="f-routine" placeholder="예) 드라이어 사용, 오일 미사용"></div>
+    <hr class="divider"><div class="section-label">홈케어 가이드</div>
+    <div class="form-group"><label>손질 방법</label><textarea id="f-styling" rows="2" placeholder="예) 드라이 전 뿌리부터 말리기"></textarea></div>
+    <div class="form-group"><label>추천 제품</label><input type="text" id="f-products" placeholder="예) 볼륨 무스, 헤어오일"></div>
+    <div class="form-group"><label>주의사항</label><input type="text" id="f-warn" placeholder="예) 젖은 상태 빗질 금지"></div>
+    <hr class="divider"><div class="section-label">다음 방문 제안</div>
+    <div class="form-group"><label>추천 시술</label><input type="text" id="f-suggest" placeholder="예) 클리닉 + 커트 유지"></div>
+    <div class="form-group"><label>이유</label><input type="text" id="f-suggest-reason" placeholder="예) 모질 보강 필요한 시기"></div>
+    <hr class="divider">
+    <div class="section-label">🔒 개인 메모 <span style="font-weight:400;text-transform:none;letter-spacing:0">(이 기기에만 저장 — 고객에게 공유 안됨)</span></div>
+    <div class="form-group"><textarea id="f-memo" rows="3" placeholder="개인 메모..." style="border-color:var(--red-border);background:var(--red-bg)"></textarea></div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeModal('cmodal')">취소</button>
+      <button class="btn btn-primary" style="padding:10px 24px" onclick="saveCustomer()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 방문 기록 모달 -->
+<div class="overlay" id="vmodal">
+  <div class="modal" style="max-width:460px">
+    <div class="mheader"><h2>방문 기록 추가</h2><button class="mclose" onclick="closeModal('vmodal')">✕</button></div>
+    <div class="form-group"><label>방문일 *</label><input type="date" id="v-date"></div>
+    <div class="form-group">
+      <label>시술 내용</label>
+      <div class="tags" id="v-services">
+        <button class="tag" data-v="커트" onclick="toggleTag(this)">커트</button>
+        <button class="tag" data-v="염색" onclick="toggleTag(this)">염색</button>
+        <button class="tag" data-v="펌" onclick="toggleTag(this)">펌</button>
+        <button class="tag" data-v="탈색" onclick="toggleTag(this)">탈색</button>
+        <button class="tag" data-v="클리닉" onclick="toggleTag(this)">클리닉</button>
+        <button class="tag" data-v="매직" onclick="toggleTag(this)">매직</button>
+      </div>
+    </div>
+    <div class="form-group"><label>시술 상세</label><textarea id="v-detail" rows="2" placeholder="예) 뿌리 볼륨 강조, 내추럴 브라운"></textarea></div>
+    <div class="form-group"><label>사용 약품</label><input type="text" id="v-drug" placeholder="사용 약품/제품"></div>
+    <div class="form-group"><label>다음 방문 제안</label><input type="text" id="v-next" placeholder="예) 3개월 후 클리닉"></div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeModal('vmodal')">취소</button>
+      <button class="btn btn-primary" style="padding:10px 24px" onclick="saveVisit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const OWNER='peace7892',REPO='hairsalon-cards',PATH='data/customers.json';
+let TOKEN=localStorage.getItem('ghToken')||'';
+let customers=[],selected=null,editId=null,visitId=null,fileSha=null;
+let priv={};
+
+window.onload=()=>{
+  priv=JSON.parse(localStorage.getItem('priv')||'{}');
+  const hasPw=localStorage.getItem('pw');
+  if(!hasPw){document.getElementById('setup-group').style.display='block';document.getElementById('login-desc').textContent='처음 사용 시 비밀번호를 설정하세요';}
+  if(localStorage.getItem('auth')==='1')showApp();
+};
+
+function login(){
+  const pw=document.getElementById('login-pw').value;
+  const setup=document.getElementById('setup-pw').value;
+  const stored=localStorage.getItem('pw');
+  if(!stored&&setup){const tok=document.getElementById('setup-token').value.trim();if(!tok){toast('GitHub 토큰을 입력하세요');return;}localStorage.setItem('pw',setup);localStorage.setItem('ghToken',tok);TOKEN=tok;localStorage.setItem('auth','1');showApp();return;}
+  if(pw===stored){localStorage.setItem('auth','1');document.getElementById('login-err').style.display='none';showApp();}
+  else document.getElementById('login-err').style.display='block';
+}
+function logout(){localStorage.setItem('auth','0');location.reload();}
+function showApp(){TOKEN=localStorage.getItem('ghToken')||'';document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='flex';load();}
+
+async function load(){
+  setSync('syncing','● 동기화 중');
+  try{
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,{headers:{'Authorization':`token ${TOKEN}`}});
+    if(r.ok){const d=await r.json();fileSha=d.sha;customers=JSON.parse(atob(d.content.replace(/\n/g,''))).customers||[];setSync('','● 동기화 완료');}
+    else{customers=[];setSync('err','● 파일 없음');}
+  }catch(e){customers=[];setSync('err','● 오류');}
+  renderList(customers);
+}
+
+async function save(){
+  setSync('syncing','● 저장 중');
+  try{
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify({customers},null,2))));
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,{
+      method:'PUT',headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
+      body:JSON.stringify({message:'고객 데이터 업데이트',content,...(fileSha&&{sha:fileSha})})
+    });
+    if(r.ok){const d=await r.json();fileSha=d.content.sha;setSync('','● 저장 완료');toast('저장되었습니다 ✅');}
+    else setSync('err','● 저장 실패');
+  }catch(e){setSync('err','● 저장 오류');}
+}
+
+function setSync(cls,txt){const el=document.getElementById('sync');el.textContent=txt;el.className='sync '+cls;}
+
+function renderList(list){
+  const el=document.getElementById('clist');
+  if(!list.length){el.innerHTML='<div class="empty-list">고객이 없습니다<br><small>+ 추가를 눌러 추가하세요</small></div>';return;}
+  el.innerHTML=list.map(c=>`
+    <div class="citem${selected?.id===c.id?' active':''}" onclick="pick('${c.id}')">
+      <div class="citem-name">${c.name}</div>
+      <div class="citem-sub">
+        <span class="badge b-${c.status==='활성'?'active':c.status==='대기중'?'waiting':'inactive'}">${c.status}</span>
+        ${c.nextVisit?`<span>${fmt(c.nextVisit)}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function filterList(q){renderList(customers.filter(c=>c.name.includes(q)||(c.phone||'').includes(q)));}
+
+function pick(id){
+  selected=customers.find(c=>c.id===id);
+  if(!selected)return;
+  renderDetail(selected);
+  document.querySelectorAll('.citem').forEach(el=>{
+    el.classList.toggle('active',el.onclick.toString().includes(`'${id}'`));
+  });
+}
+
+function renderDetail(c){
+  const p=priv[c.id]||{};
+  const cardUrl=`https://${OWNER}.github.io/${REPO}/card.html?id=${c.id}`;
+  document.getElementById('detail').innerHTML=`
+    <div class="dheader">
+      <div>
+        <div class="dname">${c.name}</div>
+        <div class="dmeta">
+          <span class="badge b-${c.status==='활성'?'active':c.status==='대기중'?'waiting':'inactive'}">${c.status}</span>
+          ${c.phone?`<span>📞 ${c.phone}</span>`:''}
+          ${c.firstVisit?`<span>첫방문 ${fmt(c.firstVisit)}</span>`:''}
+          ${c.visitCount?`<span>총 ${c.visitCount}회</span>`:''}
+        </div>
+      </div>
+      <div class="dbtns">
+        <button class="btn btn-secondary" onclick="copyLink('${cardUrl}')">🔗 링크 복사</button>
+        <button class="btn btn-secondary" onclick="openEdit('${c.id}')">✏️ 편집</button>
+        <button class="btn btn-danger" onclick="del('${c.id}')">삭제</button>
+      </div>
+    </div>
+    ${c.headShape||c.faceShape||c.hairTexture||c.routine?`
+    <div class="card">
+      <div class="card-title">헤어 프로필</div>
+      <div class="pgrid">
+        ${c.headShape?`<div class="pitem"><label>두상</label><p>${c.headShape}</p></div>`:''}
+        ${c.faceShape?`<div class="pitem"><label>얼굴형</label><p>${c.faceShape}</p></div>`:''}
+        ${c.hairTexture?`<div class="pitem"><label>모질</label><p>${c.hairTexture}</p></div>`:''}
+        ${c.routine?`<div class="pitem"><label>평소 홈케어</label><p>${c.routine}</p></div>`:''}
+      </div>
+    </div>`:''}
+    ${c.styling||c.products||c.warn?`
+    <div class="card">
+      <div class="card-title">홈케어 가이드</div>
+      ${c.styling?`<div class="pitem" style="margin-bottom:10px"><label>손질 방법</label><p>${c.styling}</p></div>`:''}
+      ${c.products?`<div class="pitem" style="margin-bottom:10px"><label>추천 제품</label><p>${c.products}</p></div>`:''}
+      ${c.warn?`<div class="pitem"><label>주의사항</label><p>${c.warn}</p></div>`:''}
+    </div>`:''}
+    ${c.suggest||c.nextVisit?`
+    <div class="card">
+      <div class="card-title">다음 방문 제안</div>
+      ${c.nextVisit?`<div class="pitem" style="margin-bottom:10px"><label>권장 날짜</label><p>${fmt(c.nextVisit)}</p></div>`:''}
+      ${c.suggest?`<div class="pitem" style="margin-bottom:10px"><label>추천 시술</label><p>${c.suggest}</p></div>`:''}
+      ${c.suggestReason?`<div class="pitem"><label>이유</label><p>${c.suggestReason}</p></div>`:''}
+    </div>`:''}
+    <div class="card">
+      <div class="card-title">방문 이력 <button class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="openVisit('${c.id}')">+ 추가</button></div>
+      ${(c.visits&&c.visits.length)?c.visits.slice().reverse().map(v=>`
+        <div class="visit-row">
+          <div class="vdate">${fmt(v.date)}</div>
+          <div class="vcontent"><strong>${(v.services||[]).join(', ')||'기록'}</strong>${v.detail?`<span>${v.detail}</span>`:''}</div>
+        </div>`).join(''):`<p style="color:#ccc;font-size:13px;padding:8px 0">방문 기록 없음</p>`}
+    </div>
+    <div class="card">
+      <div class="card-title">🔒 개인 메모 <span style="font-size:11px;font-weight:400;color:#ccc;text-transform:none;letter-spacing:0">(이 기기에만 저장)</span></div>
+      ${p.memo?`<div class="private-box">${p.memo}</div>`:`<p style="color:#ccc;font-size:13px">메모 없음</p>`}
+      <button class="btn btn-secondary" style="margin-top:10px;font-size:12px" onclick="editMemo('${c.id}')">메모 편집</button>
+    </div>`;
+}
+
+function copyLink(url){navigator.clipboard.writeText(url).then(()=>toast('링크 복사됨 📋'));}
+
+function openAdd(){editId=null;document.getElementById('mtitle').textContent='고객 추가';clearForm();openModal('cmodal');}
+function openEdit(id){
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  editId=id;document.getElementById('mtitle').textContent='고객 편집';
+  document.getElementById('f-name').value=c.name||'';
+  document.getElementById('f-phone').value=c.phone||'';
+  document.getElementById('f-first').value=c.firstVisit||'';
+  document.getElementById('f-last').value=c.lastVisit||'';
+  document.getElementById('f-next').value=c.nextVisit||'';
+  document.getElementById('f-status').value=c.status||'활성';
+  document.getElementById('f-head').value=c.headShape||'';
+  document.getElementById('f-face').value=c.faceShape||'';
+  document.getElementById('f-hair').value=c.hairTexture||'';
+  document.getElementById('f-routine').value=c.routine||'';
+  document.getElementById('f-styling').value=c.styling||'';
+  document.getElementById('f-products').value=c.products||'';
+  document.getElementById('f-warn').value=c.warn||'';
+  document.getElementById('f-suggest').value=c.suggest||'';
+  document.getElementById('f-suggest-reason').value=c.suggestReason||'';
+  document.getElementById('f-memo').value=(priv[id]||{}).memo||'';
+  document.querySelectorAll('#f-services .tag').forEach(b=>b.classList.toggle('on',(c.services||[]).includes(b.dataset.v)));
+  openModal('cmodal');
+}
+
+function clearForm(){
+  ['f-name','f-phone','f-first','f-last','f-next','f-head','f-face','f-hair','f-routine','f-styling','f-products','f-warn','f-suggest','f-suggest-reason','f-memo'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-status').value='활성';
+  document.querySelectorAll('#f-services .tag').forEach(b=>b.classList.remove('on'));
+}
+
+async function saveCustomer(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){toast('이름을 입력하세요');return;}
+  const services=[...document.querySelectorAll('#f-services .tag.on')].map(b=>b.dataset.v);
+  const memo=document.getElementById('f-memo').value.trim();
+  const id=editId||uid();
+  const data={id,name,phone:document.getElementById('f-phone').value,firstVisit:document.getElementById('f-first').value,lastVisit:document.getElementById('f-last').value,nextVisit:document.getElementById('f-next').value,status:document.getElementById('f-status').value,services,headShape:document.getElementById('f-head').value,faceShape:document.getElementById('f-face').value,hairTexture:document.getElementById('f-hair').value,routine:document.getElementById('f-routine').value,styling:document.getElementById('f-styling').value,products:document.getElementById('f-products').value,warn:document.getElementById('f-warn').value,suggest:document.getElementById('f-suggest').value,suggestReason:document.getElementById('f-suggest-reason').value,visits:editId?(customers.find(c=>c.id===editId)?.visits||[]):[]};
+  if(memo)priv[id]={memo};else delete priv[id];
+  localStorage.setItem('priv',JSON.stringify(priv));
+  if(editId){const i=customers.findIndex(c=>c.id===editId);customers[i]=data;}else customers.unshift(data);
+  closeModal('cmodal');renderList(customers);pick(id);await save();
+}
+
+async function del(id){
+  if(!confirm('삭제하시겠습니까?'))return;
+  customers=customers.filter(c=>c.id!==id);delete priv[id];
+  localStorage.setItem('priv',JSON.stringify(priv));
+  selected=null;document.getElementById('detail').innerHTML='<div class="empty-detail"><div style="font-size:48px">✂️</div><p>왼쪽에서 고객을 선택하세요</p></div>';
+  renderList(customers);await save();
+}
+
+function openVisit(id){
+  visitId=id;
+  document.getElementById('v-date').value=new Date().toISOString().split('T')[0];
+  document.querySelectorAll('#v-services .tag').forEach(b=>b.classList.remove('on'));
+  ['v-detail','v-drug','v-next'].forEach(i=>document.getElementById(i).value='');
+  openModal('vmodal');
+}
+
+async function saveVisit(){
+  const date=document.getElementById('v-date').value;
+  if(!date){toast('날짜를 입력하세요');return;}
+  const services=[...document.querySelectorAll('#v-services .tag.on')].map(b=>b.dataset.v);
+  const visit={date,services,detail:document.getElementById('v-detail').value,drug:document.getElementById('v-drug').value,next:document.getElementById('v-next').value};
+  const c=customers.find(x=>x.id===visitId);
+  if(!c.visits)c.visits=[];c.visits.push(visit);c.lastVisit=date;c.visitCount=(c.visitCount||0)+1;
+  closeModal('vmodal');renderDetail(c);await save();
+}
+
+function editMemo(id){
+  const memo=prompt('개인 메모:',(priv[id]||{}).memo||'');
+  if(memo===null)return;
+  if(memo.trim())priv[id]={...priv[id],memo:memo.trim()};else delete priv[id];
+  localStorage.setItem('priv',JSON.stringify(priv));renderDetail(customers.find(c=>c.id===id));
+}
+
+function toggleTag(b){b.classList.toggle('on');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function fmt(s){if(!s)return'';const d=new Date(s);return`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+</script>
+</body>
+</html>
