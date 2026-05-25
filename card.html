@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>헤어원네스트 | 헤어케어 기록</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f7f6f3;color:#1a1a1a;min-height:100vh}
+.header{background:linear-gradient(135deg,#2d5a27,#1a3d16);color:#fff;padding:40px 24px 32px;text-align:center}
+.header-logo{font-size:36px;margin-bottom:8px}
+.header-salon{font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:12px}
+.header-name{font-size:28px;font-weight:700;margin-bottom:6px}
+.header-sub{font-size:13px;color:rgba(255,255,255,.65)}
+.container{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+.card{background:#fff;border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#bbb;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f5f5f5}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pitem label{font-size:11px;font-weight:600;color:#bbb;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.pitem p{font-size:14px;color:#1a1a1a;line-height:1.55}
+.tl-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid #f5f5f5}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:#3d6b35;flex-shrink:0;margin-top:5px}
+.tl-date{font-size:12px;color:#aaa;width:52px;flex-shrink:0;padding-top:1px}
+.tl-body strong{font-size:14px;font-weight:600;color:#1a1a1a;display:block;margin-bottom:3px}
+.tl-body span{font-size:13px;color:#777;line-height:1.5}
+.service-tag{display:inline-block;background:#f0f5ef;color:#3d6b35;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-right:4px;margin-bottom:4px}
+.next-card{background:linear-gradient(135deg,#f0f5ef,#e8f0e6);border-radius:14px;padding:20px;margin-bottom:14px;border:1.5px solid #d4e6d0}
+.next-card .card-title{color:#3d6b35;border-color:#d4e6d0}
+.guide-item{margin-bottom:14px}
+.guide-item:last-child{margin-bottom:0}
+.guide-item label{font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px}
+.guide-item p{font-size:14px;color:#1a1a1a;line-height:1.6}
+.warn-box{background:#fffbf0;border:1.5px solid #fde68a;border-radius:9px;padding:12px 14px;font-size:13px;color:#92400e;margin-top:10px;line-height:1.6}
+.footer{text-align:center;padding:24px 16px;color:#bbb;font-size:12px;border-top:1px solid #ede9e5;margin-top:8px}
+.loading{text-align:center;padding:80px 20px;color:#bbb;font-size:14px}
+.error{text-align:center;padding:80px 20px;color:#e57373;font-size:14px}
+@media(max-width:480px){.pgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="content"><div class="loading">불러오는 중...</div></div>
+
+<script>
+const OWNER='peace7892',REPO='hairsalon-cards',PATH='data/customers.json';
+
+async function load(){
+  const params=new URLSearchParams(location.search);
+  const id=params.get('id');
+  if(!id){show('<div class="error">잘못된 링크입니다</div>');return;}
+  try{
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`,{headers:{'Accept':'application/vnd.github.v3+json'}});
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    const customers=JSON.parse(atob(d.content.replace(/\n/g,''))).customers||[];
+    const c=customers.find(x=>x.id===id);
+    if(!c){show('<div class="error">고객 정보를 찾을 수 없습니다</div>');return;}
+    render(c);
+  }catch(e){show('<div class="error">데이터를 불러올 수 없습니다</div>');}
+}
+
+function render(c){
+  const visits=(c.visits||[]).slice().reverse();
+  show(`
+    <div class="header">
+      <div class="header-logo">🌿</div>
+      <div class="header-salon">Hair Onenest</div>
+      <div class="header-name">${c.name}님의 헤어케어 기록</div>
+      <div class="header-sub">${c.visitCount?`총 ${c.visitCount}회 방문`:''}${c.lastVisit?` · 최근 방문 ${fmt(c.lastVisit)}`:''}</div>
+    </div>
+    <div class="container">
+      ${c.headShape||c.faceShape||c.hairTexture||c.routine?`
+      <div class="card">
+        <div class="card-title">내 헤어 프로필</div>
+        <div class="pgrid">
+          ${c.headShape?`<div class="pitem"><label>두상</label><p>${c.headShape}</p></div>`:''}
+          ${c.faceShape?`<div class="pitem"><label>얼굴형</label><p>${c.faceShape}</p></div>`:''}
+          ${c.hairTexture?`<div class="pitem"><label>모질</label><p>${c.hairTexture}</p></div>`:''}
+          ${c.routine?`<div class="pitem"><label>평소 홈케어</label><p>${c.routine}</p></div>`:''}
+        </div>
+      </div>`:''}
+
+      ${c.suggest||c.nextVisit?`
+      <div class="next-card">
+        <div class="card-title">🔮 다음 방문 제안</div>
+        ${c.nextVisit?`<div class="guide-item"><label>권장 시기</label><p>${fmt(c.nextVisit)}</p></div>`:''}
+        ${c.suggest?`<div class="guide-item"><label>추천 시술</label><p>${c.suggest}</p></div>`:''}
+        ${c.suggestReason?`<div class="guide-item"><label>이유</label><p>${c.suggestReason}</p></div>`:''}
+      </div>`:''}
+
+      ${visits.length?`
+      <div class="card">
+        <div class="card-title">방문 이력</div>
+        ${visits.map(v=>`
+          <div class="tl-item">
+            <div class="tl-date">${fmt(v.date)}</div>
+            <div class="tl-body">
+              <strong>${(v.services||[]).map(s=>`<span class="service-tag">${s}</span>`).join('')||'방문'}</strong>
+              ${v.detail?`<span>${v.detail}</span>`:''}
+            </div>
+          </div>`).join('')}
+      </div>`:''}
+
+      ${c.styling||c.products||c.warn?`
+      <div class="card">
+        <div class="card-title">🏠 홈케어 가이드</div>
+        ${c.styling?`<div class="guide-item"><label>손질 방법</label><p>${c.styling}</p></div>`:''}
+        ${c.products?`<div class="guide-item"><label>추천 제품</label><p>${c.products}</p></div>`:''}
+        ${c.warn?`<div class="warn-box">⚠️ ${c.warn}</div>`:''}
+      </div>`:''}
+
+      <div class="footer">헤어원네스트<br>이 기록은 고객님만을 위해 작성되었습니다</div>
+    </div>`);
+  document.title=`${c.name}님의 헤어케어 기록 | 헤어원네스트`;
+}
+
+function show(html){document.getElementById('content').innerHTML=html;}
+function fmt(s){if(!s)return'';const d=new Date(s);return`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;}
+
+load();
+</script>
+</body>
+</html>
