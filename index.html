@@ -340,12 +340,13 @@ function renderDetail(c){
     </div>`:''}
     <div class="card">
       <div class="card-title">방문 이력 <button class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="openVisit('${c.id}')">+ 추가</button></div>
-      ${(c.visits&&c.visits.length)?c.visits.slice().reverse().map(v=>`
+      ${(c.visits&&c.visits.length)?c.visits.slice().reverse().map(v=>{const vp=(p.vp&&v.vid&&p.vp[v.vid])||{};return`
         <div class="visit-row">
           <div class="vdate">${fmt(v.date)}</div>
           <div class="vcontent"><strong>${(v.services||[]).join(', ')||'기록'}</strong>${v.detail?`<span>${v.detail}</span>`:''}
+          ${vp.drug?`<span style="font-size:12px;color:#c0392b;background:#fff0f0;padding:2px 8px;border-radius:5px;display:inline-block;margin-top:4px">🔒 ${vp.drug}</span>`:''}
           ${v.photo?`<img src="${v.photo}" style="max-width:100%;max-height:160px;border-radius:8px;margin-top:8px;object-fit:cover;display:block">`:''}</div>
-        </div>`).join(''):`<p style="color:#ccc;font-size:13px;padding:8px 0">방문 기록 없음</p>`}
+        </div>`;}).join(''):`<p style="color:#ccc;font-size:13px;padding:8px 0">방문 기록 없음</p>`}
     </div>
     <div class="card">
       <div class="card-title">🔒 개인 메모 <span style="font-size:11px;font-weight:400;color:#ccc;text-transform:none;letter-spacing:0">(이 기기에만 저장)</span></div>
@@ -421,7 +422,11 @@ async function saveVisit(){
   const date=document.getElementById('v-date').value;
   if(!date){toast('날짜를 입력하세요');return;}
   const services=[...document.querySelectorAll('#v-services .tag.on')].map(b=>b.dataset.v);
-  const visit={date,services,detail:document.getElementById('v-detail').value,drug:document.getElementById('v-drug').value,next:document.getElementById('v-next').value};
+  const vid=uid();
+  const drug=document.getElementById('v-drug').value.trim();
+  const visit={vid,date,services,detail:document.getElementById('v-detail').value,next:document.getElementById('v-next').value};
+  // 약품은 localStorage에만 저장
+  if(drug){if(!priv[visitId])priv[visitId]={};if(!priv[visitId].vp)priv[visitId].vp={};priv[visitId].vp[vid]={drug};localStorage.setItem('priv',JSON.stringify(priv));}
   
   // 사진 업로드
   const photoFile=document.getElementById('v-photo').files[0];
