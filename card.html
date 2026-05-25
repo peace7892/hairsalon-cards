@@ -99,6 +99,7 @@ function render(c){
             <div class="tl-body">
               <strong>${(v.services||[]).map(s=>`<span class="service-tag">${s}</span>`).join('')||'방문'}</strong>
               ${v.detail?`<span>${linkify(v.detail)}</span>`:''}
+              ${v.photo?`<img src="${v.photo}" style="max-width:100%;max-height:220px;border-radius:10px;margin-top:8px;object-fit:cover;display:block">`:''}
             </div>
           </div>`).join('')}
       </div>`:''}
