@@ -161,6 +161,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
       </div>
     </div>
     <hr class="divider"><div class="section-label">헤어 프로필</div>
+    <div class="form-group"><label>타입</label><input type="text" id="f-type" placeholder="예) A-2, B-3..."></div>
     <div class="form-row">
       <div class="form-group"><label>두상</label><input type="text" id="f-head" placeholder="예) 후두부 납작"></div>
       <div class="form-group"><label>얼굴형</label><input type="text" id="f-face" placeholder="예) 계란형"></div>
@@ -355,6 +356,7 @@ function openEdit(id){
   document.getElementById('f-first').value=c.firstVisit||'';
   document.getElementById('f-last').value=c.lastVisit||'';
   document.getElementById('f-next').value=c.nextVisit||'';
+  document.getElementById('f-type').value=c.hairType||'';
   document.getElementById('f-head').value=c.headShape||'';
   document.getElementById('f-face').value=c.faceShape||'';
   document.getElementById('f-hair').value=c.hairTexture||'';
@@ -371,7 +373,7 @@ function openEdit(id){
 }
 
 function clearForm(){
-  ['f-name','f-phone','f-first','f-last','f-next','f-head','f-face','f-hair','f-routine','f-styling','f-products','f-warn','f-suggest','f-cycle','f-suggest-reason','f-memo'].forEach(i=>document.getElementById(i).value='');
+  ['f-name','f-phone','f-first','f-last','f-next','f-type','f-head','f-face','f-hair','f-routine','f-styling','f-products','f-warn','f-suggest','f-cycle','f-suggest-reason','f-memo'].forEach(i=>document.getElementById(i).value='');
   document.querySelectorAll('#f-services .tag').forEach(b=>b.classList.remove('on'));
 }
 
@@ -381,7 +383,7 @@ async function saveCustomer(){
   const services=[...document.querySelectorAll('#f-services .tag.on')].map(b=>b.dataset.v);
   const memo=document.getElementById('f-memo').value.trim();
   const id=editId||uid();
-  const data={id,name,phone:document.getElementById('f-phone').value,firstVisit:document.getElementById('f-first').value,lastVisit:document.getElementById('f-last').value,nextVisit:document.getElementById('f-next').value,services,headShape:document.getElementById('f-head').value,faceShape:document.getElementById('f-face').value,hairTexture:document.getElementById('f-hair').value,routine:document.getElementById('f-routine').value,styling:document.getElementById('f-styling').value,products:document.getElementById('f-products').value,warn:document.getElementById('f-warn').value,suggest:document.getElementById('f-suggest').value,cycle:document.getElementById('f-cycle').value,suggestReason:document.getElementById('f-suggest-reason').value,visits:editId?(customers.find(c=>c.id===editId)?.visits||[]):[]};
+  const data={id,name,phone:document.getElementById('f-phone').value,firstVisit:document.getElementById('f-first').value,lastVisit:document.getElementById('f-last').value,nextVisit:document.getElementById('f-next').value,services,hairType:document.getElementById('f-type').value,headShape:document.getElementById('f-head').value,faceShape:document.getElementById('f-face').value,hairTexture:document.getElementById('f-hair').value,routine:document.getElementById('f-routine').value,styling:document.getElementById('f-styling').value,products:document.getElementById('f-products').value,warn:document.getElementById('f-warn').value,suggest:document.getElementById('f-suggest').value,cycle:document.getElementById('f-cycle').value,suggestReason:document.getElementById('f-suggest-reason').value,visits:editId?(customers.find(c=>c.id===editId)?.visits||[]):[]};
   if(memo)priv[id]={memo};else delete priv[id];
   localStorage.setItem('priv',JSON.stringify(priv));
   if(editId){const i=customers.findIndex(c=>c.id===editId);customers[i]=data;}else customers.unshift(data);
