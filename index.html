@@ -203,7 +203,11 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;b
         <button class="tag" data-v="매직" onclick="toggleTag(this)">매직</button>
       </div>
     </div>
-    <div class="form-group"><label>시술 상세</label><textarea id="v-detail" rows="2" placeholder="예) 뿌리 볼륨 강조, 내추럴 브라운"></textarea></div>
+    <div class="form-group">
+      <label>💬 디자이너 노트 <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa">(고객 카드 상단에 크게 표시)</span></label>
+      <textarea id="v-note" rows="2" placeholder="예) 오늘 앞머리 라인 자연스럽게 다듬었어요. 드라이할 때 왼쪽 방향 꼭 기억해 주세요!" style="border-color:#d4b89a;background:#fdfaf5"></textarea>
+    </div>
+    <div class="form-group"><label>시술 상세 (내부용)</label><textarea id="v-detail" rows="2" placeholder="예) 뿌리 볼륨 강조, 내추럴 브라운"></textarea></div>
     <div class="form-group"><label>사용 약품</label><input type="text" id="v-drug" placeholder="사용 약품/제품"></div>
     <div class="form-group"><label>다음 방문 제안</label><input type="text" id="v-next" placeholder="예) 3개월 후 클리닉"></div>
     <div class="form-group">
@@ -411,6 +415,7 @@ function renderDetail(c){
                 <button class="btn btn-danger" style="font-size:11px;padding:2px 8px" onclick="deleteVisit('${c.id}','${v.vid||''}','${v.date}')">삭제</button>
               </div>
             </div>
+            ${v.note?`<span style="color:#8b5e3c;font-style:italic">💬 ${v.note}</span>`:''}
             ${v.detail?`<span>${v.detail}</span>`:''}
             ${vp.drug?`<span style="font-size:12px;color:#c0392b;background:#fff0f0;padding:2px 8px;border-radius:5px;display:inline-block;margin-top:4px">🔒 ${vp.drug}</span>`:''}
             ${v.photo?`<img src="${v.photo}" style="max-width:100%;max-height:160px;border-radius:8px;margin-top:8px;object-fit:cover;display:block">`:''}</div>
@@ -480,7 +485,7 @@ function openVisit(id){
   document.getElementById('vtitle').textContent='방문 기록 추가';
   document.getElementById('v-date').value=new Date().toISOString().split('T')[0];
   document.querySelectorAll('#v-services .tag').forEach(b=>b.classList.remove('on'));
-  ['v-detail','v-drug','v-next'].forEach(i=>document.getElementById(i).value='');
+  ['v-note','v-detail','v-drug','v-next'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('v-photo').value='';
   document.getElementById('v-photo-preview').innerHTML='';
   openModal('vmodal');
@@ -494,6 +499,7 @@ function openEditVisit(cid,vid){
   document.getElementById('vtitle').textContent='방문 기록 수정';
   document.getElementById('v-date').value=v.date||'';
   document.querySelectorAll('#v-services .tag').forEach(b=>b.classList.toggle('on',(v.services||[]).includes(b.dataset.v)));
+  document.getElementById('v-note').value=v.note||'';
   document.getElementById('v-detail').value=v.detail||'';
   document.getElementById('v-next').value=v.next||'';
   const vp=(priv[cid]?.vp&&priv[cid].vp[vid])||{};
@@ -528,7 +534,7 @@ async function saveVisit(){
   if(editVid){
     const v=c.visits.find(x=>x.vid===editVid);
     if(!v){toast('기록을 찾을 수 없습니다');return;}
-    v.date=date;v.services=services;v.detail=document.getElementById('v-detail').value;v.next=document.getElementById('v-next').value;
+    v.date=date;v.services=services;v.note=document.getElementById('v-note').value;v.detail=document.getElementById('v-detail').value;v.next=document.getElementById('v-next').value;
     // 약품 수정
     if(!priv[visitId])priv[visitId]={};if(!priv[visitId].vp)priv[visitId].vp={};
     if(drug)priv[visitId].vp[editVid]={drug};else delete priv[visitId].vp[editVid];
@@ -546,7 +552,7 @@ async function saveVisit(){
 
   // 추가 모드
   const vid=uid();
-  const visit={vid,date,services,detail:document.getElementById('v-detail').value,next:document.getElementById('v-next').value};
+  const visit={vid,date,services,note:document.getElementById('v-note').value,detail:document.getElementById('v-detail').value,next:document.getElementById('v-next').value};
   if(drug){if(!priv[visitId])priv[visitId]={};if(!priv[visitId].vp)priv[visitId].vp={};priv[visitId].vp[vid]={drug};}
   const photoFile=document.getElementById('v-photo').files[0];
   if(photoFile){
